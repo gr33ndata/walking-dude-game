@@ -10,3 +10,6 @@ and to put some AI (i.e. [Reinforcement learning](https://en.wikipedia.org/wiki/
 python manual.py
 ```
 
+# Code quality
+
+Current code quality - according to my super advanced calculations - is 1/10 :)
