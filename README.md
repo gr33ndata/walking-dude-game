@@ -1,4 +1,5 @@
-# The Walking Dude (the epic game for your free time)
+# The Walking Dude 
+### The epic game for your free time
 
 A dude trying to avoid tourists with selfie sticks.
 
