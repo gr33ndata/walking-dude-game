@@ -12,7 +12,7 @@ and to put some AI (i.e. [Reinforcement learning](https://en.wikipedia.org/wiki/
 Make sure to have Python 3.6+, and to install the libraries needed
 
 ```
-pip install requirements.txt
+pip install -r requirements.txt
 ```
 
 Then run:
