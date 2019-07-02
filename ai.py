@@ -30,7 +30,7 @@ class MyGame(arcade.Window):
             self.antagonists[a].center_x = SCREEN_WIDTH - 50
             self.antagonists[a].center_y = random.randint(0, SCREEN_HEIGHT)
 
-        self.gamma = 0.05
+        self.eps = 0.5
         self.actions = [arcade.key.UP, arcade.key.DOWN, None]
         self.Q = {}
         try:
@@ -39,18 +39,19 @@ class MyGame(arcade.Window):
             pass
 
     def get_state(self):
+        # return [
+        #     int((self.protagonist.center_y - self.antagonists[0].center_y) / 20),
+        #     int((self.protagonist.center_y - self.antagonists[1].center_y) / 20),
+        #     self.protagonist.center_y <= 20,
+        #     self.protagonist.center_y >= (SCREEN_HEIGHT - 20)
+        # ]
         return [
-            int((self.protagonist.center_y - self.antagonists[0].center_y) / 20),
-            int((self.protagonist.center_y - self.antagonists[1].center_y) / 20),
-            self.protagonist.center_y <= 20,
-            self.protagonist.center_y >= (SCREEN_HEIGHT - 20)
-            # min(
-            #     self.antagonists[0].center_x,
-            #     self.antagonists[1].center_x,
-            # ),
-            # self.antagonists[0].center_x,
-            # self.antagonists[0].center_y,
-            # self.antagonists[1].center_y,
+            self.protagonist.center_x,
+            self.protagonist.center_y,
+            self.antagonists[0].center_x,
+            self.antagonists[0].center_y,
+            self.antagonists[1].center_x,
+            self.antagonists[1].center_y,
         ]
 
     def on_draw(self):
@@ -81,7 +82,7 @@ class MyGame(arcade.Window):
                 self.antagonists[a].center_x = 0
                 self.antagonists[a].center_y = random.randint(0, SCREEN_HEIGHT)
             else:
-                self.antagonists[a].center_x -= (1+a)*10
+                self.antagonists[a].center_x -= 10 # (1+a)*10
                 self.antagonists[a].set_position(
                     center_x=self.antagonists[a].center_x,
                     center_y=self.antagonists[a].center_y
@@ -89,45 +90,54 @@ class MyGame(arcade.Window):
 
     def on_update(self, delta_time):
         current_state = self.get_state()
-        self.gamma -= 0.000001
-        if random.randint(0, 100) <= self.gamma:
-            chosen_action = random.choice(self.actions)
-            print(self.gamma, chosen_action)
-            next_q = self.Q.get(str(current_state + [chosen_action]), 0)
+
+        self.eps -= 0.000001
+        if random.randint(0, 100) <= self.eps:
+            current_action = random.choice(self.actions)
+            current_q = self.Q.get(str(current_state + [current_action]), 0)
         else:
-            chosen_action, chosen_q = sorted(
+            current_action, current_q = sorted(
                 [
-                    (action, self.Q.get(str(current_state + [action]), 0))
-                    for action in self.actions
+                    (a, self.Q.get(str(current_state + [a]), 0))
+                    for a in self.actions
                 ],
                 key=lambda x: x[1]
             )[-1]
-        self.press_key(chosen_action)
+
+        self.press_key(current_action)
         self.update_protagonist()
         self.release_key()
         self.update_antagonists()
-        v = 0
+
+        reward = 0
         for a in range(self.num_antagonists):
             if arcade.check_for_collision(self.protagonist, self.antagonists[a]):
                 self.died += 1
-                v = -1
+                reward = -1
                 self.antagonists[a].center_x = SCREEN_WIDTH - 50
                 self.antagonists[a].center_y = random.randint(0, SCREEN_HEIGHT)
-                self.protagonist.center_y = SCREEN_HEIGHT / 2
-        _, next_q = sorted(
-            [
-                (action, self.Q.get(str(current_state + [action]), 0))
-                for action in self.actions
-            ],
-            key=lambda x: x[1]
-        )[-1]
+                self.protagonist.center_y = random.randint(0, SCREEN_HEIGHT)
+
+        next_state = self.get_state()
+
+        if random.randint(0, 100) <= self.eps:
+            next_action = random.choice(self.actions)
+            next_q = self.Q.get(str(next_state + [next_action]), 0)
+        else:
+            next_action, next_q = sorted(
+                [
+                    (a, self.Q.get(str(next_state + [a]), 0))
+                    for a in self.actions
+                ],
+                key=lambda x: x[1]
+            )[-1]
+
         self.Q[
-            str(current_state + [chosen_action])
-        ] = next_q + 0.1 * v
+            str(current_state + [current_action])
+        ] = current_q + 0.1 * (reward + 0.9 * next_q - current_q)
 
     def press_key(self, key):
         if key == arcade.key.Q:
-            print(self.gamma, self.Q)
             joblib.dump(self.Q, 'Q.pkl')
             arcade.close_window()
         elif key == arcade.key.UP:
