@@ -13,7 +13,7 @@ class MyGame(arcade.Window):
         arcade.set_background_color(arcade.color.GRAY)
 
     def setup(self):
-        self.lives = 5
+        self.lives = 50
         self.protagonist_moves = 0
 
         self.protagonist = arcade.Sprite("u1.png", 0.25)
